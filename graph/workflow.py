@@ -10,13 +10,11 @@ from agents.planner_agent import planner_agent
 from agents.risk_agent import risk_agent
 from agents.sentiment_agent import sentiment_agent
 from agents.synthesis_agent import synthesis_agent
-
 from graph.state import ResearchState
 
 
 # Prepare deterministic analysis plan
 def plan_analysis(state: ResearchState) -> dict[str, Any]:
-
     ticker = state["ticker"]
 
     return {
@@ -24,9 +22,8 @@ def plan_analysis(state: ResearchState) -> dict[str, Any]:
     }
 
 
-# Fetch market metrics for downstream analysis
+# Fetch market metrics
 def fetch_market_data(state: ResearchState) -> dict[str, Any]:
-
     ticker = state["ticker"]
 
     return {
@@ -34,9 +31,8 @@ def fetch_market_data(state: ResearchState) -> dict[str, Any]:
     }
 
 
-# Retrieve recent financial news headlines
+# Fetch financial news
 def fetch_news(state: ResearchState) -> dict[str, Any]:
-
     ticker = state["ticker"]
 
     return {
@@ -44,9 +40,8 @@ def fetch_news(state: ResearchState) -> dict[str, Any]:
     }
 
 
-# Classify market sentiment from news data
+# Analyze sentiment from news
 def analyze_sentiment(state: ResearchState) -> dict[str, Any]:
-
     news = state.get("news_result", {}).get("news", [])
 
     return {
@@ -54,9 +49,8 @@ def analyze_sentiment(state: ResearchState) -> dict[str, Any]:
     }
 
 
-# Detect market signals and divergences
+# Detect market signals
 def detect_patterns(state: ResearchState) -> dict[str, Any]:
-
     market_data = (
         state.get("market_data_result", {})
         .get("market_data", {})
@@ -72,11 +66,9 @@ def detect_patterns(state: ResearchState) -> dict[str, Any]:
     }
 
 
-# Evaluate market and sentiment-related risks
+# Evaluate market risks
 def analyze_risk(state: ResearchState) -> dict[str, Any]:
-
     market_result = state.get("market_data_result", {})
-
     sentiment = state.get("sentiment_result", {})
 
     news_topics = (
@@ -93,38 +85,30 @@ def analyze_risk(state: ResearchState) -> dict[str, Any]:
     }
 
 
-# Aggregate agent outputs into a structured report
+# Generate final report
 def synthesize_report(state: ResearchState) -> dict[str, Any]:
-
     ticker = state["ticker"]
 
     combined = {
         "ticker": ticker.upper(),
-
         "plan": state.get("plan_result", {}),
-
         "market_data": (
             state.get("market_data_result", {})
             .get("market_data", {})
         ),
-
         "news": (
             state.get("news_result", {})
             .get("news", [])
         ),
-
         "news_topics": (
             state.get("news_result", {})
             .get("topics", [])
         ),
-
         "sentiment": state.get("sentiment_result", {}),
-
         "risks": (
             state.get("risk_result", {})
             .get("risks", [])
         ),
-
         "patterns": (
             state.get("pattern_result", {})
             .get("signals", [])
@@ -137,9 +121,8 @@ def synthesize_report(state: ResearchState) -> dict[str, Any]:
     }
 
 
-# Validate generated report against compliance rules
+# Validate final report
 def critique_report(state: ResearchState) -> dict[str, Any]:
-
     report = (
         state.get("report_result", {})
         .get("report", "")
@@ -152,7 +135,6 @@ def critique_report(state: ResearchState) -> dict[str, Any]:
 
 # Build LangGraph orchestration pipeline
 def build_graph():
-
     graph = StateGraph(ResearchState)
 
     graph.add_node("planner", plan_analysis)
@@ -166,12 +148,22 @@ def build_graph():
 
     graph.set_entry_point("planner")
 
+    # Fan-out: market data and news can run independently
     graph.add_edge("planner", "market_data")
-    graph.add_edge("market_data", "news")
+    graph.add_edge("planner", "news")
+
+    # Fan-in before sentiment-dependent analysis
+    graph.add_edge("market_data", "sentiment")
     graph.add_edge("news", "sentiment")
+
+    # Parallel downstream analysis
     graph.add_edge("sentiment", "patterns")
-    graph.add_edge("patterns", "risk")
+    graph.add_edge("sentiment", "risk")
+
+    # Fan-in before report synthesis
+    graph.add_edge("patterns", "synthesis")
     graph.add_edge("risk", "synthesis")
+
     graph.add_edge("synthesis", "critic")
     graph.add_edge("critic", END)
 
@@ -181,24 +173,18 @@ def build_graph():
 research_graph = build_graph()
 
 
-# Execute end-to-end research workflow
+# Execute workflow
 def run_workflow(ticker: str) -> dict[str, Any]:
-
     result = research_graph.invoke({
         "ticker": ticker.upper()
     })
 
     return {
         "plan": result.get("plan_result", {}),
-
         "data": result.get("combined", {}),
-
         "report": (
             result.get("report_result", {})
             .get("report", "")
         ),
-
-        "critique": (
-            result.get("critique_result", {})
-        ),
+        "critique": result.get("critique_result", {}),
     }
