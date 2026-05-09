@@ -1,13 +1,17 @@
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class ResearchState(TypedDict, total=False):
     ticker: str
-    market_data_result: dict
-    news_result: dict
-    sentiment_result: dict
-    risk_result: dict
-    pattern_result: dict
-    combined: dict
-    report_result: dict
-    critique_result: dict
+
+    plan_result: dict[str, Any]
+
+    market_data_result: dict[str, Any]
+    news_result: dict[str, Any]
+    sentiment_result: dict[str, Any]
+    risk_result: dict[str, Any]
+    pattern_result: dict[str, Any]
+
+    combined: dict[str, Any]
+    report_result: dict[str, Any]
+    critique_result: dict[str, Any]

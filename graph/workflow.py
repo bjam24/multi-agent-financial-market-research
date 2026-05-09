@@ -1,19 +1,32 @@
 from typing import Any
+
 from langgraph.graph import END, StateGraph
+
 from agents.critic_agent import critic_agent
 from agents.market_data_agent import market_data_agent
 from agents.news_agent import news_agent
 from agents.pattern_agent import pattern_agent
+from agents.planner_agent import planner_agent
 from agents.risk_agent import risk_agent
 from agents.sentiment_agent import sentiment_agent
 from agents.synthesis_agent import synthesis_agent
+
 from graph.state import ResearchState
 
 
+# Prepare deterministic analysis plan
+def plan_analysis(state: ResearchState) -> dict[str, Any]:
+
+    ticker = state["ticker"]
+
+    return {
+        "plan_result": planner_agent(ticker)
+    }
+
+
+# Fetch market metrics for downstream analysis
 def fetch_market_data(state: ResearchState) -> dict[str, Any]:
-    """
-    Fetch raw market metrics for downstream analysis
-    """
+
     ticker = state["ticker"]
 
     return {
@@ -21,10 +34,9 @@ def fetch_market_data(state: ResearchState) -> dict[str, Any]:
     }
 
 
+# Retrieve recent financial news headlines
 def fetch_news(state: ResearchState) -> dict[str, Any]:
-    """
-    Retrieve recent financial news headlines
-    """
+
     ticker = state["ticker"]
 
     return {
@@ -32,10 +44,9 @@ def fetch_news(state: ResearchState) -> dict[str, Any]:
     }
 
 
+# Classify market sentiment from news data
 def analyze_sentiment(state: ResearchState) -> dict[str, Any]:
-    """
-    Classify overall market sentiment from news data
-    """
+
     news = state.get("news_result", {}).get("news", [])
 
     return {
@@ -43,52 +54,77 @@ def analyze_sentiment(state: ResearchState) -> dict[str, Any]:
     }
 
 
-def analyze_risk(state: ResearchState) -> dict[str, Any]:
-    """
-    Evaluate basic market risk indicators
-    """
-    market_result = state.get("market_data_result", {})
-
-    return {
-        "risk_result": risk_agent(market_result)
-    }
-
-
+# Detect market signals and divergences
 def detect_patterns(state: ResearchState) -> dict[str, Any]:
-    """
-    Detect simple price and volume patterns
-    """
+
     market_data = (
         state.get("market_data_result", {})
         .get("market_data", {})
     )
 
+    sentiment = state.get("sentiment_result", {})
+
     return {
-        "pattern_result": pattern_agent(market_data)
+        "pattern_result": pattern_agent(
+            market_data=market_data,
+            sentiment=sentiment,
+        )
     }
 
 
+# Evaluate market and sentiment-related risks
+def analyze_risk(state: ResearchState) -> dict[str, Any]:
+
+    market_result = state.get("market_data_result", {})
+
+    sentiment = state.get("sentiment_result", {})
+
+    news_topics = (
+        state.get("news_result", {})
+        .get("topics", [])
+    )
+
+    return {
+        "risk_result": risk_agent(
+            market_data_result=market_result,
+            sentiment=sentiment,
+            news_topics=news_topics,
+        )
+    }
+
+
+# Aggregate agent outputs into a structured report
 def synthesize_report(state: ResearchState) -> dict[str, Any]:
-    """
-    Aggregate agent outputs into a structured report
-    """
+
     ticker = state["ticker"]
 
     combined = {
         "ticker": ticker.upper(),
+
+        "plan": state.get("plan_result", {}),
+
         "market_data": (
             state.get("market_data_result", {})
             .get("market_data", {})
         ),
+
         "news": (
             state.get("news_result", {})
             .get("news", [])
         ),
+
+        "news_topics": (
+            state.get("news_result", {})
+            .get("topics", [])
+        ),
+
         "sentiment": state.get("sentiment_result", {}),
+
         "risks": (
             state.get("risk_result", {})
             .get("risks", [])
         ),
+
         "patterns": (
             state.get("pattern_result", {})
             .get("signals", [])
@@ -101,10 +137,9 @@ def synthesize_report(state: ResearchState) -> dict[str, Any]:
     }
 
 
+# Validate generated report against compliance rules
 def critique_report(state: ResearchState) -> dict[str, Any]:
-    """
-    Validate generated report against compliance rules
-    """
+
     report = (
         state.get("report_result", {})
         .get("report", "")
@@ -115,27 +150,28 @@ def critique_report(state: ResearchState) -> dict[str, Any]:
     }
 
 
+# Build LangGraph orchestration pipeline
 def build_graph():
-    """
-    Build sequential LangGraph orchestration pipeline
-    """
+
     graph = StateGraph(ResearchState)
 
+    graph.add_node("planner", plan_analysis)
     graph.add_node("market_data", fetch_market_data)
     graph.add_node("news", fetch_news)
     graph.add_node("sentiment", analyze_sentiment)
-    graph.add_node("risk", analyze_risk)
     graph.add_node("patterns", detect_patterns)
+    graph.add_node("risk", analyze_risk)
     graph.add_node("synthesis", synthesize_report)
     graph.add_node("critic", critique_report)
 
-    graph.set_entry_point("market_data")
+    graph.set_entry_point("planner")
 
+    graph.add_edge("planner", "market_data")
     graph.add_edge("market_data", "news")
     graph.add_edge("news", "sentiment")
-    graph.add_edge("sentiment", "risk")
-    graph.add_edge("risk", "patterns")
-    graph.add_edge("patterns", "synthesis")
+    graph.add_edge("sentiment", "patterns")
+    graph.add_edge("patterns", "risk")
+    graph.add_edge("risk", "synthesis")
     graph.add_edge("synthesis", "critic")
     graph.add_edge("critic", END)
 
@@ -145,20 +181,23 @@ def build_graph():
 research_graph = build_graph()
 
 
+# Execute end-to-end research workflow
 def run_workflow(ticker: str) -> dict[str, Any]:
-    """
-    Execute end-to-end research workflow
-    """
+
     result = research_graph.invoke({
         "ticker": ticker.upper()
     })
 
     return {
+        "plan": result.get("plan_result", {}),
+
         "data": result.get("combined", {}),
+
         "report": (
             result.get("report_result", {})
             .get("report", "")
         ),
+
         "critique": (
             result.get("critique_result", {})
         ),

@@ -27,7 +27,14 @@ if st.button("Analyze"):
             data = fetch_analysis(ticker)
 
             st.success("Analysis completed")
-            st.json(data)
 
+            st.subheader("Research Report")
+            st.markdown(data["report"])
+
+            st.subheader("Compliance Review")
+            st.json(data["critique"])
+
+            with st.expander("Raw Workflow Data"):
+                st.json(data["data"])
         except requests.exceptions.RequestException as e:
             st.error(f"API request failed: {e}")

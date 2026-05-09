@@ -39,7 +39,7 @@ def format_bullet_list(items: list[Any], fallback: str) -> str:
 
 def synthesis_agent(data: dict[str, Any]) -> dict[str, Any]:
     """
-    Build a structured research report from agent outputs.
+    Build a structured market research report from agent outputs.
     """
 
     ticker = data.get("ticker", "UNKNOWN")
@@ -47,6 +47,7 @@ def synthesis_agent(data: dict[str, Any]) -> dict[str, Any]:
     market_data = data.get("market_data", {})
     risks = data.get("risks", [])
     news = data.get("news", [])
+    news_topics = data.get("news_topics", [])
     sentiment = data.get("sentiment", {})
     patterns = data.get("patterns", [])
 
@@ -54,38 +55,43 @@ def synthesis_agent(data: dict[str, Any]) -> dict[str, Any]:
     confidence = float(sentiment.get("confidence") or 0)
 
     report = f"""
-        # Financial Market Research Report: {ticker}
+# Financial Market Research Report: {ticker}
 
-        ## Market Summary
-        - Current price: {market_data.get("current_price", "N/A")}
-        - Previous close: {market_data.get("previous_close", "N/A")}
-        - Daily change: {market_data.get("daily_change", "N/A")} ({market_data.get("daily_change_percent", "N/A")}%)
-        - Volume: {market_data.get("volume", "N/A")}
+## Market Summary
+- Current price: {market_data.get("current_price", "N/A")}
+- Previous close: {market_data.get("previous_close", "N/A")}
+- Daily change: {market_data.get("daily_change", "N/A")} ({market_data.get("daily_change_percent", "N/A")}%)
+- Volume: {market_data.get("volume", "N/A")}
+- Latest data date: {market_data.get("latest_date", "N/A")}
+- Data source: {market_data.get("data_source", "N/A")}
 
-        ## Key News
-        {format_bullet_list(news, "No relevant news available.")}
+## Key Developments
+{format_bullet_list(news, "No relevant news available.")}
 
-        ## Sentiment Analysis
-        - Sentiment: {sentiment_label}
-        - Confidence: {confidence}
-        - Reason: {sentiment.get("reason", "No sentiment explanation available.")}
+## Detected News Topics
+{format_bullet_list(news_topics, "No major news themes detected.")}
 
-        ## Market Signals
-        {format_bullet_list(patterns, "No market signals detected.")}
+## Sentiment Analysis
+- Sentiment: {sentiment_label}
+- Confidence: {confidence}
+- Reason: {sentiment.get("reason", "No sentiment explanation available.")}
 
-        ## Risk Analysis
-        {format_bullet_list(risks, "No significant risks detected.")}
+## Market Signals
+{format_bullet_list(patterns, "No market signals detected.")}
 
-        ## Research Insight
-        {get_research_insight(sentiment_label)}
+## Risk Analysis
+{format_bullet_list(risks, "No significant risks detected.")}
 
-        ## Confidence Score
-        - Score: {confidence}
-        - Reason: {get_confidence_reason(confidence)}
+## Research Insight
+{get_research_insight(sentiment_label)}
 
-        ## Disclaimer
-        This report is for informational purposes only and does not constitute financial advice.
-        """.strip()
+## Confidence Score
+- Score: {confidence}
+- Reason: {get_confidence_reason(confidence)}
+
+## Disclaimer
+This report is for informational purposes only and does not constitute financial advice.
+""".strip()
 
     return {
         "agent": "synthesis_agent",

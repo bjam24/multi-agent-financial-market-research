@@ -7,14 +7,19 @@ HIGH_VOLUME_THRESHOLD = 50_000_000
 LOW_VOLUME_THRESHOLD = 1_000_000
 
 
-def pattern_agent(market_data: dict[str, Any]) -> dict[str, Any]:
+def pattern_agent(
+    market_data: dict[str, Any],
+    sentiment: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
-    Identify basic market behaviour signals using price movement
-    and trading volume heuristics.
+    Detect price, volume, and sentiment divergence signals.
     """
+
+    sentiment = sentiment or {}
 
     price_change = float(market_data.get("daily_change_percent") or 0)
     volume = int(market_data.get("volume") or 0)
+    sentiment_label = sentiment.get("sentiment", "neutral")
 
     signals: list[str] = []
 
@@ -37,6 +42,16 @@ def pattern_agent(market_data: dict[str, Any]) -> dict[str, Any]:
     else:
         signals.append("Limited short-term price movement")
 
+    if sentiment_label == "positive" and price_change < 0:
+        signals.append(
+            "Divergence: positive news sentiment with negative price movement"
+        )
+
+    if sentiment_label == "negative" and price_change > 0:
+        signals.append(
+            "Divergence: negative news sentiment with positive price movement"
+        )
+
     return {
         "agent": "pattern_agent",
         "status": "success",
@@ -44,6 +59,7 @@ def pattern_agent(market_data: dict[str, Any]) -> dict[str, Any]:
         "metadata": {
             "price_change_percent": price_change,
             "volume": volume,
-            "method": "rule_based_heuristics",
+            "sentiment_context": sentiment_label,
+            "method": "rule_based_signal_detection",
         },
     }

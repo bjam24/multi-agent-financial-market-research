@@ -1,7 +1,7 @@
 import json
 import os
-
 from typing import Any
+
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
 
@@ -17,18 +17,18 @@ def build_sentiment_prompt(news: list[str]) -> str:
     headlines = "\n".join(f"- {item}" for item in news)
 
     return f"""
-        Analyze the overall financial market sentiment from the news headlines below.
+Analyze the overall financial market sentiment from the news headlines below.
 
-        Return only valid JSON using this schema:
-        {{
-            "sentiment": "positive | neutral | negative",
-            "confidence": 0.0,
-            "reason": "short explanation"
-        }}
+Return only valid JSON using this schema:
+{{
+  "sentiment": "positive | neutral | negative",
+  "confidence": 0.0,
+  "reason": "short explanation"
+}}
 
-        News:
-        {headlines}
-    """.strip()
+News:
+{headlines}
+""".strip()
 
 
 def default_response(reason: str, status: str = "success") -> dict[str, Any]:
@@ -43,7 +43,7 @@ def default_response(reason: str, status: str = "success") -> dict[str, Any]:
 
 def sentiment_agent(news: list[str]) -> dict[str, Any]:
     """
-    Classify market news sentiment using an LLM-based research assistant.
+    Classify financial news sentiment using an LLM.
     """
 
     api_key = os.getenv("OPENAI_API_KEY")
