@@ -12,6 +12,7 @@ from agents.sentiment_agent import sentiment_agent
 from agents.synthesis_agent import synthesis_agent
 from graph.state import ResearchState
 from storage.report_store import save_report
+from services.evaluation_service import evaluate_report
 
 
 # Prepare deterministic analysis plan
@@ -189,6 +190,13 @@ def run_workflow(ticker: str) -> dict[str, Any]:
         ),
         "critique": result.get("critique_result", {}),
     }
+
+    evaluation = evaluate_report(
+        report=workflow_result["report"],
+        critique=workflow_result["critique"],
+    )
+
+    workflow_result["evaluation"] = evaluation
 
     workflow_result["saved_report"] = save_report(
         ticker=ticker,

@@ -31,8 +31,15 @@ if st.button("Analyze"):
             st.subheader("Research Report")
             st.markdown(data["report"])
 
+            st.divider()
+
             st.subheader("Compliance Review")
             st.json(data["critique"])
+
+            st.divider()
+
+            st.subheader("Evaluation")
+            st.json(data["evaluation"])
 
             with st.expander("Raw Workflow Data"):
                 st.json(data["data"])
