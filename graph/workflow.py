@@ -11,6 +11,7 @@ from agents.risk_agent import risk_agent
 from agents.sentiment_agent import sentiment_agent
 from agents.synthesis_agent import synthesis_agent
 from graph.state import ResearchState
+from storage.report_store import save_report
 
 
 # Prepare deterministic analysis plan
@@ -179,7 +180,7 @@ def run_workflow(ticker: str) -> dict[str, Any]:
         "ticker": ticker.upper()
     })
 
-    return {
+    workflow_result = {
         "plan": result.get("plan_result", {}),
         "data": result.get("combined", {}),
         "report": (
@@ -188,3 +189,10 @@ def run_workflow(ticker: str) -> dict[str, Any]:
         ),
         "critique": result.get("critique_result", {}),
     }
+
+    workflow_result["saved_report"] = save_report(
+        ticker=ticker,
+        workflow_result=workflow_result,
+    )
+
+    return workflow_result
