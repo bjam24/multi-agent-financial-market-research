@@ -15,7 +15,45 @@ def fetch_analysis(ticker: str) -> dict:
     return response.json()
 
 
+def fetch_saved_reports() -> list:
+
+    response = requests.get(
+        f"{API_URL}/api/reports",
+        timeout=10,
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    return data.get("reports", [])
+
+
+def fetch_saved_report(filename: str) -> dict:
+
+    response = requests.get(
+        f"{API_URL}/api/reports/{filename}",
+        timeout=10,
+    )
+
+    response.raise_for_status()
+
+    return response.json()
+
+
 st.title("AI Multi-Agent Financial Market Research")
+
+st.sidebar.header("Saved Reports")
+
+saved_reports = fetch_saved_reports()
+
+selected_report = st.sidebar.selectbox(
+    "Select saved report",
+    options=[
+        report["filename"]
+        for report in saved_reports
+    ],
+)
 
 ticker = st.text_input("Ticker", "NVDA")
 
@@ -45,3 +83,18 @@ if st.button("Analyze"):
                 st.json(data["data"])
         except requests.exceptions.RequestException as e:
             st.error(f"API request failed: {e}")
+
+
+if selected_report:
+
+    saved_report = fetch_saved_report(
+        selected_report
+    )
+
+    st.divider()
+
+    st.subheader("Saved Report Preview")
+
+    st.markdown(
+        saved_report["content"]
+    )
