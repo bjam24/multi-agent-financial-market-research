@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    container_name: financial-research-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage/reports:/app/storage/reports
