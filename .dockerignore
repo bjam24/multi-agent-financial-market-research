@@ -1,5 +1,9 @@
+.venv/
 __pycache__/
 *.pyc
 .env
-.venv
-.git
+.git/
+.gitignore
+storage/reports/
+storage/history.json
+.pytest_cache/

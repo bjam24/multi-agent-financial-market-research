@@ -1,13 +1,22 @@
 import streamlit as st
 import requests
 
+
 API_URL = "http://localhost:8000"
 
 
+st.set_page_config(
+    page_title="AI Financial Market Research",
+    page_icon="📈",
+    layout="wide",
+)
+
+
 def fetch_analysis(ticker: str) -> dict:
+
     response = requests.get(
         f"{API_URL}/api/analyze/{ticker}",
-        timeout=30
+        timeout=60,
     )
 
     response.raise_for_status()
@@ -41,60 +50,131 @@ def fetch_saved_report(filename: str) -> dict:
     return response.json()
 
 
-st.title("AI Multi-Agent Financial Market Research")
+# =========================
+# Sidebar
+# =========================
 
-st.sidebar.header("Saved Reports")
+st.sidebar.title("Saved Reports")
 
 saved_reports = fetch_saved_reports()
 
 selected_report = st.sidebar.selectbox(
-    "Select saved report",
+    "Select report",
     options=[
         report["filename"]
         for report in saved_reports
-    ],
+    ] if saved_reports else [],
 )
 
-ticker = st.text_input("Ticker", "NVDA")
 
-if st.button("Analyze"):
+# =========================
+# Main Header
+# =========================
 
-    with st.spinner("Running multi-agent analysis..."):
+st.title("AI Multi-Agent Financial Market Research")
+
+st.caption(
+    """
+    Multi-agent financial market intelligence system built with
+    LangGraph, OpenAI, FastAPI, and Streamlit.
+    """
+)
+
+st.divider()
+
+
+# =========================
+# Analysis Section
+# =========================
+
+ticker = st.text_input(
+    "Ticker",
+    value="NVDA",
+)
+
+analyze_button = st.button(
+    "Run Analysis",
+    use_container_width=True,
+)
+
+
+if analyze_button:
+
+    with st.spinner(
+        "Running multi-agent market research workflow..."
+    ):
 
         try:
             data = fetch_analysis(ticker)
 
-            st.success("Analysis completed")
+            st.success(
+                "Analysis completed successfully."
+            )
 
-            st.subheader("Research Report")
-            st.markdown(data["report"])
+            tab1, tab2, tab3, tab4 = st.tabs(
+                [
+                    "Report",
+                    "Evaluation",
+                    "Critique",
+                    "Raw Data",
+                ]
+            )
 
-            st.divider()
+            with tab1:
 
-            st.subheader("Compliance Review")
-            st.json(data["critique"])
+                st.markdown(
+                    data["report"]
+                )
 
-            st.divider()
+            with tab2:
 
-            st.subheader("Evaluation")
-            st.json(data["evaluation"])
+                st.json(
+                    data["evaluation"]
+                )
 
-            with st.expander("Raw Workflow Data"):
-                st.json(data["data"])
-        except requests.exceptions.RequestException as e:
-            st.error(f"API request failed: {e}")
+            with tab3:
 
+                st.json(
+                    data["critique"]
+                )
+
+            with tab4:
+
+                st.json(
+                    data["data"]
+                )
+
+        except requests.exceptions.RequestException as error:
+
+            st.error(
+                f"API request failed: {error}"
+            )
+
+
+# =========================
+# Saved Report Preview
+# =========================
 
 if selected_report:
 
-    saved_report = fetch_saved_report(
-        selected_report
-    )
+    try:
 
-    st.divider()
+        saved_report = fetch_saved_report(
+            selected_report
+        )
 
-    st.subheader("Saved Report Preview")
+        st.divider()
 
-    st.markdown(
-        saved_report["content"]
-    )
+        st.subheader(
+            "Saved Report Preview"
+        )
+
+        st.markdown(
+            saved_report["content"]
+        )
+
+    except requests.exceptions.RequestException as error:
+
+        st.error(
+            f"Failed to load saved report: {error}"
+        )
